@@ -24,6 +24,7 @@ class DefaultDataProvider(BaseDataProvider):
 
     def get_data_source(self, key):
         if key in self.data_sources.keys():
+            print 'check key %s' % key
             data_src = self.data_sources[key]
             return data_src
         else:
@@ -31,4 +32,5 @@ class DefaultDataProvider(BaseDataProvider):
 
 
     def add_data_source(self, key, data_source):
+        print 'add data src: %s, %s' % (key, data_source)
         self.data_sources[key] = data_source

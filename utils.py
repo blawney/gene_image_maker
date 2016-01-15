@@ -138,7 +138,7 @@ def get_data_source_provider(f, source_type, many=False):
         raise Exception('??')
     clz = locate_provider(file_ext, available_classes)
     try:
-        clz(f, many=many)
+        return clz(f, many=many)
     except Exception as ex:
         print 'Error: could not create a data source.'
         sys.exit(1)
