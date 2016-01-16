@@ -44,21 +44,13 @@ class CoveragePlotManager(object):
 
         # get the transcript information
         annotation_data_source = self.data_provider.get_data_source(settings.ANNOTATION_SRC)
-        print 'ann data src: %s' % annotation_data_source
-        try:
-            print kwargs
-            window_interval = annotation_data_source.get_window_interval(kwargs['selected_transcript'],
+        window_interval = annotation_data_source.get_window_interval(kwargs['selected_transcript'],
                                                                      kwargs['upstream_padding'],
                                                                      kwargs['downstream_padding'])
-        except Exception as ex:
-            print 'EXXXXX'
-            print ex.message
-        print 'window: %s' % window_interval
 
         # get the coverage data as a Pandas DataFrame
         # each row is the coverage for a single sample
         coverage_data_source = self.data_provider.get_data_source(settings.COVERAGE_SRC)
-        print coverage_data_source
         cvg_data_df = coverage_data_source.get_coverage_data(window_interval)
         self.coverage_artist.draw(cvg_data_df)
 

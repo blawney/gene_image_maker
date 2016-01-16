@@ -17,6 +17,8 @@ class GeneDetailArtist(PlotFeatureArtist):
     FEATURE_SIZES = {'exon': 0.2, 'utr': 0.1, 'intron':0.05}
     GENE_MODEL_COLOR = 'gray'
     GENE_MODEL_OFFSET = 0.05 # percentage of total plot height that gene model is below horizontal axis
+    DIRECTION_ARROW_STALK_THICKNESS = 0.025
+    DIRECTION_ARROW_HEAD_HEIGHT = 0.1
 
     @staticmethod
     def _prepare_features(transcript_features):
@@ -53,6 +55,9 @@ class GeneDetailArtist(PlotFeatureArtist):
         filtered_features = GeneDetailArtist._prepare_features(transcript_features)
         breakpoints = GeneDetailArtist._get_breakpoints(filtered_features)
         range_and_feature_map = GeneDetailArtist._assign_gene_elements(filtered_features, breakpoints)
+
+        # get strand from the features
+        strand = filtered_features[0].iv.strand
 
         ax = self.ax
         ph = ax.get_ylim()[1]
@@ -96,28 +101,52 @@ class GeneDetailArtist(PlotFeatureArtist):
                     )
                     break
 
-        arrow_sz = 0.05 * ph # array height relative to the height of the plot
-        #tri = mpl.patches.RegularPolygon((breakpoints[1],50),3, 20,facecolor='gray', edgecolor='gray', orientation = np.pi/2.0)
-        aspect_ratio = ax.get_aspect()
-        #A = np.array([[aspect_ratio, 0],[0,1]])
-        #new_pts = tri.get_verts().dot(A)
-        #print new_pts
-        print breakpoints
-        #TODO: handle strand!
-        xs = breakpoints[-1] - 0.05 *(breakpoints[-1]-breakpoints[0])
-        ys = gene_model_midline - gene_model_height
-        tri_h = 20
-        h = 0.5 * np.sqrt(3) * tri_h * aspect_ratio
-        pt_array = np.empty((4,2))
-        pt_array[0] = [xs, ys]
-        pt_array[3] = [xs, ys]
-        pt_array[1] = [xs - h, ys - 0.5*tri_h]
-        pt_array[2] = [xs, ys-tri_h]
-        transcript_patches.append(ax.add_patch(mpl.patches.Polygon(pt_array,facecolor='gray', edgecolor='gray')))
 
         for l in transcript_patches:
             l.set_clip_on(False)
 
+        aspect_ratio = ax.get_aspect()
+        arrow_base_x = breakpoints[0]
+        arrow_base_y = gene_model_midline
+        t = GeneDetailArtist.DIRECTION_ARROW_STALK_THICKNESS * ph
+        H = GeneDetailArtist.DIRECTION_ARROW_HEAD_HEIGHT * ph
+        ex_h = GeneDetailArtist.FEATURE_SIZES['exon'] * ph
+        l = 1.5*t + 0.5*H + 0.5*ex_h
+        rect1 = mpl.patches.Rectangle(
+            (arrow_base_x, arrow_base_y-l),
+            t*aspect_ratio,
+            l,
+            facecolor='gray',
+            linewidth=0
+        )
+        rect2 = mpl.patches.Rectangle(
+            (arrow_base_x, arrow_base_y-l),
+            l*aspect_ratio,
+            t,
+            facecolor='gray',
+            linewidth=0,
+        )
+        rect1.set_clip_on = True
+
+        xs = arrow_base_x + l*aspect_ratio
+        ys = arrow_base_y - l + 0.5*t - 0.5*H
+        tri_h = 0.5 * np.sqrt(3) * H * aspect_ratio
+        pt_array = np.empty((4,2))
+        pt_array[0] = [xs, ys]
+        pt_array[3] = [xs, ys]
+        pt_array[1] = [xs + tri_h, ys + 0.5*H]
+        pt_array[2] = [xs, ys + H]
+        tri = mpl.patches.Polygon(pt_array,facecolor='gray', edgecolor='gray')
+
+        arrow_group = mpl.collections.PatchCollection([rect1, rect2, tri], match_original = True)
+        arrow_group.set_clip_on(False)
+
+        # this uses a bit of linear algebra to flip the arrow across the vertical axis so we don't have to create
+        # two drawing cases with different orientations, etc.
+        if strand == '-':
+            mirror_transform = mpl.transforms.Affine2D().from_values(-1,0,0,1,0,0).translate(2*arrow_base_x + breakpoints[-1] - breakpoints[0],0) + ax.transData
+            arrow_group.set_transform(mirror_transform)
+        ax.add_collection(arrow_group)
 
 
 

@@ -16,8 +16,11 @@ def import_module_from_string(class_path):
         module = importlib.import_module(module_path)
         return getattr(module, class_name)
     except (ImportError, AttributeError) as ex:
+        print 'ACK'
         msg = "Could not import: %s" % class_path
         raise ImportError(msg)
+    except Exception as ex:
+        print ex
 
 
 class CLParser(object):
@@ -180,7 +183,6 @@ def configure_data_provider(**kwargs):
 
 def get_artists(**kwargs):
     cvg_artist_clz = import_module_from_string(settings.COVERAGE_PROFILE_ARTIST)
-
     gene_detail_artist_clz = None
     try:
         draw_gene = kwargs['include_gene_model']

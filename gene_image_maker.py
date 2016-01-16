@@ -14,6 +14,7 @@ def plot(**kwargs):
         print 'add artists'
         # Add artists to the manager
         cvg_artist_clz, gene_detail_artist_clz, additional_artists = utils.get_artists(**kwargs)
+        print 'pt1'
         manager.add_artists(cvg_artist_clz, gene_detail_artist_clz, *additional_artists)
 
         manager.draw(**kwargs)
