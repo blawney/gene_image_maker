@@ -1,4 +1,5 @@
 import os
+import re
 try:
     import HTSeq
     import pysam
@@ -103,21 +104,23 @@ class GTFGeneDetailDataSource(FileDataSource, AnnotationSourceMixin):
         self.gtf = HTSeq.GFF_Reader(self.filepathlist[0])
         self.feature_set = None
 
+    @staticmethod
+    def _filter_enst(f,t):
+        if re.search(t, f):
+            return True
+        return False
+
     def _parse_gtf_features(self, transcript_id):
         self.feature_set = set()
-        try:
-            for feature in self.gtf:
-                try:
-                    if feature.attr['transcript_id'] == transcript_id:
-                        self.feature_set.add(feature)
-                except:
-                    # if a line in the GTF file doesn't have a transcript field (e.g. a line denoting the gene)
-                    # then the try block above will throw a KeyError on that dictionary lookup.
-                    # Silently catch and move on
-                    pass
-        except Exception as ex:
-            print 'Exception occurred while parsing features from GTF file: %s' % ex.message
-            raise ex
+
+        names = ['chrom','source','feature','start','end','score','strand','frame', 'attribute']
+        gtf_data = pd.read_table('chr1.gtf', sep='\t', comment='#', names=names)
+        print 'done reading'
+        transcript_series = gtf_data['attribute'].apply(self._filter_enst, args=(transcript_id,))
+        gtf_data = gtf_data.ix[transcript_series]
+        for r in gtf_data.iterrows():
+            r = r[1] # iterrows is a tuple of (index, Series)
+            self.feature_set.add(HTSeq.GenomicFeature(transcript_id, r.feature, HTSeq.GenomicInterval(r.chrom, r.start, r.end, r.strand)))
 
     def get_window_interval(self, transcript_id, upstream_padding, downstream_padding):
         print 'search for %s' % transcript_id
