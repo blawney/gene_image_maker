@@ -103,7 +103,7 @@ class GTFGeneDetailDataSource(FileDataSource, AnnotationSourceMixin):
         self.gtf = HTSeq.GFF_Reader(self.filepathlist[0])
         self.feature_set = None
 
-    def parse_gtf_features(self, transcript_id):
+    def _parse_gtf_features(self, transcript_id):
         self.feature_set = set()
         try:
             for feature in self.gtf:
@@ -122,7 +122,7 @@ class GTFGeneDetailDataSource(FileDataSource, AnnotationSourceMixin):
     def get_window_interval(self, transcript_id, upstream_padding, downstream_padding):
         print 'search for %s' % transcript_id
         if not self.feature_set:
-            self.parse_gtf_features(transcript_id)
+            self._parse_gtf_features(transcript_id)
         transcript_found = False
         for f in self.feature_set:
             if f.type == "transcript":
@@ -139,7 +139,7 @@ class GTFGeneDetailDataSource(FileDataSource, AnnotationSourceMixin):
 
     def get_genomic_features(self):
         if not self.feature_set:
-            self.parse_gtf_features(transcript_id)
+            self._parse_gtf_features(transcript_id)
         return list(self.feature_set)
 
 
