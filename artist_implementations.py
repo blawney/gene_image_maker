@@ -50,16 +50,29 @@ class GeneDetailArtist(PlotFeatureArtist):
                     range_dict[range_key].append(f.type.lower())
         return range_dict
 
+    @staticmethod
+    def _filter_breakpoints(breakpoints, xmin, xmax):
+        for i,bp in enumerate(breakpoints):
+            if bp < xmin:
+                breakpoints[i] = xmin
+            if bp > xmax:
+                breakpoints[i] = xmax
+        return breakpoints
+
     def draw(self, transcript_features):
         print 'in gene detail draw'
+
+        ax = self.ax
+        xmin, xmax = ax.get_xlim()
+        print 'xrange: %s, %s' % (xmin, xmax)
+
         filtered_features = GeneDetailArtist._prepare_features(transcript_features)
         breakpoints = GeneDetailArtist._get_breakpoints(filtered_features)
+        breakpoints = GeneDetailArtist._filter_breakpoints(breakpoints, xmin, xmax)
         range_and_feature_map = GeneDetailArtist._assign_gene_elements(filtered_features, breakpoints)
 
         # get strand from the features
         strand = filtered_features[0].iv.strand
-
-        ax = self.ax
         ph = ax.get_ylim()[1]
         gene_model_top = -GeneDetailArtist.GENE_MODEL_OFFSET * ph
         gene_model_height = ph *np.max(GeneDetailArtist.FEATURE_SIZES.values())
@@ -167,7 +180,9 @@ class CoverageProfileArtist(PlotFeatureArtist):
         # for aspect ratio, limits, etc.
         figure_w_to_h = 5
         max_cvg = df.max().max()
-        aspect_ratio = (df.columns.max() - df.columns.min())/float(max_cvg * figure_w_to_h)
+        x_range = df.columns.max() - df.columns.min()
+        aspect_ratio = x_range/float(max_cvg * figure_w_to_h)
+        ax.set_xlim((df.columns.min(),df.columns.max()))
         print aspect_ratio
         print type(aspect_ratio)
         #aspect_ratio = 1.6
